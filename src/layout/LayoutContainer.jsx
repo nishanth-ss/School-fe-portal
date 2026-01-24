@@ -113,7 +113,7 @@ export default function LayoutContainer() {
 
           <div className="flex items-center gap-5">
             {/* Location */}
-            <div className="flex flex-col items-center">
+          {user?.role === "ADMIN" && <div className="flex flex-col items-center">
               <Button variant="text" onClick={() => setLocationModal(true)}>
                 <MapPin
                   className={`w-5 h-5 ${
@@ -128,17 +128,17 @@ export default function LayoutContainer() {
               ) : (
                 <span className="text-sm font-bold text-red-500">No Location Selected</span>
               )}
-            </div>
+            </div>}
 
             {/* DB Location */}
-            <div className="flex flex-col items-center">
+           {user?.role === "ADMIN" && <div className="flex flex-col items-center">
               <Button variant="text" onClick={() => setDbModal(true)}>
                 <DatabaseZap className={`w-5 h-5 ${dbPath ? "text-green-500" : "text-red-500"}`} />
               </Button>
               <span className={`font-bold text-sm ${dbPath ? "text-green-700" : "text-red-500"}`}>
                 DB Location
               </span>
-            </div>
+            </div>}
           </div>
         </header>
 
