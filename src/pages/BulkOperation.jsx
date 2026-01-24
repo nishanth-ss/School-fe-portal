@@ -144,7 +144,7 @@ const BulkOperation = ({ location }) => {
                     <input
                         ref={inmateInputRef}
                         type="file"
-                        accept=".csv"
+                        accept=".csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                         onChange={handleInmateFileUpload}
                         className="hidden"
                     />
