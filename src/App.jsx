@@ -43,7 +43,7 @@ export default function App() {
           {/* ============================
               POS routes (ONLY canteen)
           ============================ */}
-          <Route element={<RoleRoute allow={["POS"]} />}>
+          <Route element={<RoleRoute allow={["ADMIN","POS"]} />}>
             <Route path="/tuck-shop-pos" element={<CanteenPosSystem />} />
             {/* pos default */}
             <Route index element={<Navigate to="/tuck-shop-pos" replace />} />
