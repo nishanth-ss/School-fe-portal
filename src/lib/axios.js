@@ -38,6 +38,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 || error.response?.status === 403) {
       // optional auto logout
       localStorage.removeItem("token");
+      localStorage.clear();
       window.location.href = "/login";
     }
 

@@ -26,19 +26,30 @@ export function LocationProvider({ children }) {
   // set default from API
   useEffect(() => {
     const list = locationsQuery.data?.data;
-    if (!list?.length) return;
+    if (!Array.isArray(list) || list.length === 0) return;
 
+    // 1) if there is a selected location, refresh it from list (updates localStorage too)
     if (selectedLocation?._id) {
-      const stillExists = list.find(
-        (x) => x._id === selectedLocation._id
-      );
-      if (stillExists) return;
+      const latest = list.find((x) => x._id === selectedLocation._id);
+
+      // if still exists, update state/localStorage with the latest object
+      if (latest) {
+        // avoid unnecessary re-renders
+        const changed = JSON.stringify(latest) !== JSON.stringify(selectedLocation);
+        if (changed) {
+          setSelectedLocation(latest);
+          localStorage.setItem("selectedLocation", JSON.stringify(latest));
+        }
+        return;
+      }
     }
 
+    // 2) if no selection or it was deleted, pick first as default
     const first = list[0];
     setSelectedLocation(first);
     localStorage.setItem("selectedLocation", JSON.stringify(first));
-  }, [locationsQuery.data]);
+  }, [locationsQuery.data, selectedLocation?._id]);
+
 
   const selectLocation = (loc) => {
     setSelectedLocation(loc);

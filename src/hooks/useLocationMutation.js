@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createLocation, getLocations, saveBackupConfig, updateLocation } from "../service/locationService";
 
 export const useLocationsQuery = (enabled) =>
@@ -10,8 +10,10 @@ export const useLocationsQuery = (enabled) =>
     staleTime: 1000 * 60 * 5,
   });
 
-export const useLocationMutation = () =>
-  useMutation({
+export const useLocationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: async ({ isEdit, selectedLocation, payload }) => {
       if (isEdit) {
         return updateLocation({
@@ -21,7 +23,13 @@ export const useLocationMutation = () =>
       }
       return createLocation(payload);
     },
+
+    onSuccess: async () => {
+      // ✅ this will trigger getLocations again
+      await queryClient.invalidateQueries({ queryKey: ["locations"] });
+    },
   });
+};
 
   // DB
   export const useSaveBackupMutation = () =>
