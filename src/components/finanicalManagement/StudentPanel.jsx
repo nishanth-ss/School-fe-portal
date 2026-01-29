@@ -75,14 +75,14 @@ export const StudentPanel = ({ student }) => {
                 <InfoItem label="Religion" value={student?.religion} />
                 <InfoItem label="Contact No." value={student?.contact_number} />
                 <InfoItem label="Deposit Amount" value={student?.deposite_amount?.toString()} />
-                <InfoItem label="Subscription" value={student?.subscription ? "Yes" : "No"} />
+                {/* <InfoItem label="Subscription" value={student?.subscription ? "Yes" : "No"} /> */}
             </div>
         </Box>
     );
 };
 
 const InfoItem = ({ label, value }) => (
-    <div className="bg-gray-50 rounded-xl px-3 p-1">
+    <div className="bg-gray-50 rounded-xl px-3 p-1 flex flex-row md:flex-col items-center md:items-start gap-3 md:gap-1">
         <Typography variant="caption" className="text-gray-500">
             {label}
         </Typography>

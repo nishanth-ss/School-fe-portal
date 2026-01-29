@@ -202,7 +202,7 @@ function CanteenInventory() {
   return (
     <Box className="w-full bg-gray-50 p-4 md:p-6 lg:p-8">
       <Box className="max-w-8xl mx-auto space-y-4">
-        <Box display="flex" justifyContent="space-between" alignItems="center" gap={2}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" gap={2} className="flex-col md:flex-row">
           <TextField
             label="Search"
             size="small"

@@ -171,7 +171,7 @@ export default function Reports() {
     ======================= */
 
     return (
-        <div className="p-6 bg-gray-50">
+        <div className="p-4 md:p-2 md:p-6 bg-gray-50">
             <Typography variant="h5" className="mb-6 font-bold">
                 Financial Reports
             </Typography>

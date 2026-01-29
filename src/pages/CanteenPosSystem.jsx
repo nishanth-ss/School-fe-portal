@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
-import { Box, Paper, Typography, TextField, Button, Divider } from "@mui/material";
+import { Box, Button, Divider, Grid, Paper, TextField, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
 
 import {
@@ -71,7 +71,7 @@ const CanteenPosSystem = () => {
             } catch (err) {
                 if (!alive) return;
                 console.log(err);
-                
+
                 enqueueSnackbar(
                     err?.response?.data?.message || "Face ID fetch failed",
                     { variant: "error" }
@@ -188,7 +188,7 @@ const CanteenPosSystem = () => {
     };
 
     return (
-        <Box className="px-4">
+        <Box sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
             <Typography variant="h5" fontWeight={700}>
                 Canteen POS System
             </Typography>
@@ -197,36 +197,55 @@ const CanteenPosSystem = () => {
             </Typography>
 
             {/* =========================
-          RECENT PURCHASES (TOP)
-      ========================== */}
+      RECENT PURCHASES (TOP)
+  ========================== */}
             <Paper
                 variant="outlined"
                 sx={{
                     borderColor: "#3498db",
-                    maxHeight: 200,
+                    maxHeight: { xs: 260, sm: 220, md: 200 },
                     overflowY: "auto",
-                    p: 2,
-                    mb: 1,
+                    p: { xs: 1.5, sm: 2 },
+                    mb: 2,
                 }}
             >
-                <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
+                {/* Header row becomes column on mobile */}
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: { xs: "stretch", sm: "center" },
+                        justifyContent: "space-between",
+                        gap: 1,
+                        flexDirection: { xs: "column", sm: "row" },
+                    }}
+                >
                     <Typography variant="h6" fontWeight={700}>
                         Recent Purchases
                     </Typography>
 
-                    <Box display="flex" gap={1} alignItems="center">
+                    <Box
+                        sx={{
+                            display: "flex",
+                            gap: 1,
+                            alignItems: "center",
+                            flexDirection: { xs: "column", sm: "row" },
+                            width: { xs: "100%", sm: "auto" },
+                        }}
+                    >
                         <TextField
                             size="small"
                             placeholder="Search by Student ID..."
                             value={purchaseSearch}
                             onChange={(e) => setPurchaseSearch(e.target.value)}
-                            sx={{ width: 260 }}
+                            sx={{ width: { xs: "100%", sm: 260 } }}
                         />
+
                         <Button
                             variant="outlined"
                             onClick={handleRefreshPurchases}
                             disabled={purchasesFetching}
                             startIcon={<Search size={16} />}
+                            sx={{ width: { xs: "100%", sm: "auto" } }}
                         >
                             {purchasesFetching ? "Refreshing..." : "Refresh"}
                         </Button>
@@ -255,10 +274,10 @@ const CanteenPosSystem = () => {
                             sx={{
                                 py: 1,
                                 display: "flex",
-                                alignItems: "center",
+                                alignItems: { xs: "flex-start", md: "center" },
                                 justifyContent: "space-between",
                                 gap: 2,
-                                flexWrap: "nowrap",
+                                flexDirection: { xs: "column", md: "row" },
                                 borderBottom: "1px solid #e5e7eb",
                             }}
                         >
@@ -266,15 +285,14 @@ const CanteenPosSystem = () => {
                             <Box
                                 sx={{
                                     display: "flex",
-                                    alignItems: "center",
-                                    gap: 2,
+                                    alignItems: { xs: "flex-start", sm: "center" },
+                                    gap: 1.5,
+                                    flexWrap: "wrap",
+                                    width: "100%",
                                     overflow: "hidden",
-                                    whiteSpace: "nowrap",
-                                    flex: 1,
                                 }}
                             >
-                                {/* Student */}
-                                <Typography fontWeight={700} noWrap>
+                                <Typography fontWeight={700} sx={{ minWidth: 0 }}>
                                     <span className="text-gray-500">Student:</span>{" "}
                                     {p.student_id?.student_name} -
                                     <span className="text-red-400 ml-1">
@@ -282,15 +300,15 @@ const CanteenPosSystem = () => {
                                     </span>
                                 </Typography>
 
-                                {/* Products */}
                                 <Typography
                                     variant="body2"
                                     color="text.secondary"
-                                    noWrap
                                     sx={{
-                                        maxWidth: 350,
+                                        width: { xs: "100%", sm: "auto" },
+                                        maxWidth: { sm: 380, md: 350 },
                                         overflow: "hidden",
                                         textOverflow: "ellipsis",
+                                        whiteSpace: { xs: "normal", sm: "nowrap" },
                                     }}
                                 >
                                     {(p.products || [])
@@ -301,12 +319,10 @@ const CanteenPosSystem = () => {
                                         .join(", ")}
                                 </Typography>
 
-                                {/* Date */}
                                 <Typography
                                     variant="caption"
                                     color="text.secondary"
-                                    noWrap
-                                    sx={{ minWidth: 160 }}
+                                    sx={{ minWidth: { xs: "auto", md: 160 } }}
                                 >
                                     {p.createdAt ? new Date(p.createdAt).toLocaleString() : ""}
                                 </Typography>
@@ -318,7 +334,8 @@ const CanteenPosSystem = () => {
                                     display: "flex",
                                     alignItems: "center",
                                     gap: 1.5,
-                                    flexShrink: 0,
+                                    justifyContent: { xs: "space-between", md: "flex-end" },
+                                    width: { xs: "100%", md: "auto" },
                                 }}
                             >
                                 <Typography
@@ -338,12 +355,12 @@ const CanteenPosSystem = () => {
                                     size="small"
                                     onClick={() => handleReverse(p._id)}
                                     disabled={p.is_reversed || reverseMutation.isPending}
+                                    sx={{ width: { xs: "100%", sm: "auto" } }}
                                 >
                                     {reverseMutation.isPending ? "Reversing..." : "Reverse"}
                                 </Button>
                             </Box>
                         </Box>
-
                     ))
                 ) : !purchasesLoading ? (
                     <Typography align="center" color="text.secondary" sx={{ py: 2 }}>
@@ -353,11 +370,13 @@ const CanteenPosSystem = () => {
             </Paper>
 
             {/* =========================
-          GRID: LEFT + RIGHT
-      ========================== */}
-            <div className="grid grid-cols-2 gap-4">
+      GRID: LEFT + RIGHT (responsive)
+      xs=12 => full width on mobile
+      md=6  => two columns on desktop
+  ========================== */}
+            <Grid container spacing={2} sx={{ width: "100%" }} alignItems="stretch">
                 {/* LEFT */}
-                <div>
+                <Grid item xs={12} sm={12} md={6} sx={{ width: "100%" }}>
                     <PosLeftCard
                         studentSearchValue={studentSearchValue}
                         setStudentSearchValue={setStudentSearchValue}
@@ -371,50 +390,77 @@ const CanteenPosSystem = () => {
                         setOpenFaceId={setOpenFaceId}
                     />
 
-                    {/* Student fetch feedback (optional) */}
                     {studentFetching ? (
-                        <p className="text-gray-500 text-sm mt-2">Searching student...</p>
+                        <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
+                            Searching student...
+                        </Typography>
                     ) : null}
 
                     {studentError ? (
-                        <p className="text-red-500 text-sm mt-2">
-                            {studentError?.response?.data?.message || studentError?.message || "Student fetch failed"}
-                        </p>
+                        <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                            {studentError?.response?.data?.message ||
+                                studentError?.message ||
+                                "Student fetch failed"}
+                        </Typography>
                     ) : null}
-                </div>
+                </Grid>
 
                 {/* RIGHT */}
-                <div>
-                    <Paper variant="outlined" sx={{ borderColor: "#3498db", p: 2 }}>
+                <Grid item xs={12} sm={12} md={6} sx={{ width: "100%" }}>
+                    <Paper variant="outlined" sx={{ borderColor: "#3498db", p: { xs: 1.5, sm: 2 } }}>
                         <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
                             Available Items
                         </Typography>
 
-                        <div className="space-y-2 max-h-[380px] overflow-y-auto">
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1, maxHeight: 380, overflowY: "auto" }}>
                             {availableItems?.length ? (
                                 availableItems.map((item) => (
-                                    <div
+                                    <Box
                                         key={item._id}
-                                        className="flex justify-between items-center p-3 rounded-lg cursor-pointer hover:bg-gray-50 border border-[#3498db]"
                                         onClick={() => setCartItems((prev) => [...prev, item])}
+                                        sx={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            alignItems: "center",
+                                            gap: 2,
+                                            p: 1.5,
+                                            borderRadius: 2,
+                                            cursor: "pointer",
+                                            border: "1px solid #3498db",
+                                            "&:hover": { backgroundColor: "#f9fafb" },
+                                        }}
                                     >
-                                        <div>
-                                            <div className="font-medium">{item.itemName}</div>
-                                            <div className="text-sm text-gray-500">Stock: {item.stockQuantity}</div>
-                                        </div>
-                                        <div className="font-medium">₹{item.price}</div>
-                                    </div>
+                                        <Box sx={{ minWidth: 0 }}>
+                                            <Typography fontWeight={600} noWrap>
+                                                {item.itemName}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary" noWrap>
+                                                Stock: {item.stockQuantity}
+                                            </Typography>
+                                        </Box>
+
+                                        <Typography fontWeight={600} sx={{ flexShrink: 0 }}>
+                                            ₹{item.price}
+                                        </Typography>
+                                    </Box>
                                 ))
                             ) : (
-                                <p className="text-gray-500 text-center py-6">No items available</p>
+                                <Typography color="text.secondary" align="center" sx={{ py: 3 }}>
+                                    No items available
+                                </Typography>
                             )}
-                        </div>
+                        </Box>
                     </Paper>
-                </div>
-            </div>
+                </Grid>
+            </Grid>
 
             {openFaceId && (
-                <FaceRecognition mode="match" open={openFaceId} setOpen={setOpenFaceId} setFaceIdData={setFaceIdData} />
+                <FaceRecognition
+                    mode="match"
+                    open={openFaceId}
+                    setOpen={setOpenFaceId}
+                    setFaceIdData={setFaceIdData}
+                />
             )}
         </Box>
     );

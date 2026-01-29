@@ -131,7 +131,7 @@ const UserManagement = () => {
 
     return (
         <div>
-            <div className='flex justify-between items-center'>
+            <div className='flex justify-between items-center m-3 md:m-0'>
                 <div>
                     <h1 className='text-2xl text-primary font-bold'>User Management</h1>
                     <h3>Monitor Users</h3>
@@ -143,7 +143,7 @@ const UserManagement = () => {
                     Add user</button>
             </div>
 
-            <Box sx={{ height: 620, width: "100%" }} className="bg-white rounded-2xl shadow-sm mt-3">
+            <Box sx={{ height: "calc(100vh - 260px)", width: "100%" }} className="bg-white rounded-2xl shadow-sm mt-3">
                 <DataGrid
                     rows={rows}
                     columns={columns}

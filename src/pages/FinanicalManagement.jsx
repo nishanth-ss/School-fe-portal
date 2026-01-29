@@ -112,7 +112,7 @@ export default function FinancialManagement() {
             contactNumber: "",
             remarks: "",
           }); // clears form
-           setSearchValue("");
+          setSearchValue("");
         } else {
           enqueueSnackbar(res?.message || "Deposit failed", { variant: "error" });
         }
@@ -127,9 +127,10 @@ export default function FinancialManagement() {
 
   return (
     <Card className="bg-white shadow-sm">
-      <Box className="flex items-start justify-between p-4">
-        <Box>
-          <Typography variant="h6" fontWeight={700}>
+      {/* Header */}
+      <Box className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between p-4">
+        <Box className="min-w-0">
+          <Typography variant="h6" fontWeight={700} className="truncate">
             Deposit Processing
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -138,14 +139,21 @@ export default function FinancialManagement() {
         </Box>
 
         {showStudentPanel && (
-          <Box className="text-right">
-            <Typography variant="body2" fontWeight={600} color="success.main">
+          <Box className="sm:text-right">
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              color="success.main"
+              className="break-words"
+            >
               Student: {student.student_name} {student.father_name}
             </Typography>
+
             <Typography variant="body2" fontWeight={700} color="success.main">
               Balance: ₹{student.deposite_amount ?? 0}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+
+            <Typography variant="caption" color="text.secondary" className="break-words">
               Class: {student?.class_info?.class_name ?? "-"} {student?.class_info?.section ?? "-"} (
               {student?.class_info?.academic_year ?? "-"})
             </Typography>
@@ -156,7 +164,9 @@ export default function FinancialManagement() {
       <Divider />
 
       <CardContent>
-        <div className="grid grid-cols-2 gap-4">
+        {/* ✅ Responsive grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Left side form */}
           <div className="flex flex-col gap-3">
             {/* Student Search */}
             <Box>
@@ -178,7 +188,6 @@ export default function FinancialManagement() {
                 helperText={errors.exactData?.message}
               />
 
-              {/* Search state text */}
               <div className="mt-1 text-xs text-gray-500">
                 {studentQuery.isFetching ? "Searching..." : ""}
                 {!studentQuery.isFetching && exactData?.length >= 3 && !student && (
@@ -219,7 +228,6 @@ export default function FinancialManagement() {
               )}
             />
 
-
             {/* Relationship */}
             <Controller
               name="relationShipId"
@@ -244,7 +252,6 @@ export default function FinancialManagement() {
                 </TextField>
               )}
             />
-
 
             {/* Deposit Amount */}
             <TextField
@@ -294,16 +301,13 @@ export default function FinancialManagement() {
             </Button>
           </div>
 
-          <div>
-            {showStudentPanel ? (
-              <StudentPanel student={student} />
-            ) : (
-              <EmptyStudentPanel />
-            )}
+          {/* Right side panel */}
+          <div className="min-w-0">
+            {showStudentPanel ? <StudentPanel student={student} /> : <EmptyStudentPanel />}
           </div>
         </div>
-
       </CardContent>
     </Card>
+
   );
 }

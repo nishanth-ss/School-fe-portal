@@ -164,7 +164,7 @@ export default function StudentManagement() {
 
   return (
     <div className="w-full bg-gray-50 overflow-x-hidden">
-      <div className="px-4 md:px-6 lg:px-8 py-4">
+      <div className="px-3 md:px-6 lg:px-8 py-3 md:py-4">
         <div className="max-w-8xl mx-auto space-y-4">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
@@ -173,10 +173,10 @@ export default function StudentManagement() {
               <p className="text-xs text-slate-500">{isFetching && !isLoading ? "Updating..." : ""}</p>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
               <TextField
                 size="small"
-                placeholder="Search student name"
+                placeholder="Search student ID"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);

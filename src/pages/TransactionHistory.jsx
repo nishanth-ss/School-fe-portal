@@ -207,11 +207,11 @@ export default function TransactionHistory() {
     );
 
     return (
-        <div className="w-full bg-gray-50 overflow-x-hidden">
-            <div className="px-4 md:px-6 lg:px-8 py-4">
+        <div className="w-full bg-gray-50 px-4 overflow-x-hidden">
+            <div className="px-0 md:px-4 lg:px-8 py-4">
                 <div className="max-w-8xl mx-auto space-y-6">
                     {/* Header */}
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">Transaction History</h1>
                             <p className="text-gray-600 text-sm md:text-base">

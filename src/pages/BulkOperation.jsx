@@ -91,11 +91,11 @@ const BulkOperation = ({ location }) => {
     };
 
     return (
-        <div>
-            <div className="flex justify-between">
+        <div className="mx-4">
+            <div className="flex justify-between flex-col md:flex-row">
                 <div>
                     <h1 className="text-2xl font-bold">Bulk Operations</h1>
-                    <h3 className="text-lg">
+                    <h3 className="text-md md:text-lg py-3 md:py-0">
                         Upload CSV files to add multiple students or process wages in bulk
                     </h3>
                 </div>

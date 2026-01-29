@@ -238,7 +238,7 @@ function StoreInventoryDialog({
 
                                 return (
                                     <div key={field.id} className="flex flex-col gap-4 border p-4 rounded-lg">
-                                        <div className="grid grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             {/* Item Name (Autocomplete) */}
                                             <Controller
                                                 control={control}

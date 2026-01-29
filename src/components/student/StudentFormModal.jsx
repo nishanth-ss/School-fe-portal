@@ -464,7 +464,7 @@ export default function StudentFormModal({
                                 helperText={errors.class_info?.academic_year?.message}
                             />
                             {/* Face ID + Buttons */}
-                            <div className="grid grid-cols-[80%_20%] gap-2 items-center">
+                            <div className="grid grid-cols-[80%_20%] gap-2 pb-3 md:pb-0 items-center">
                                 {/* FACE REGISTER BUTTON */}
                                 <MuiButton
                                     type="button"

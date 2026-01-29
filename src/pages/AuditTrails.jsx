@@ -78,7 +78,7 @@ export default function AuditTrails() {
     const total = data?.pagination?.total ?? 0;
 
     return (
-        <div className="w-full bg-gray-50 p-5">
+        <div className="w-full bg-gray-50 p-1 md:p-5">
             <div className="max-w-8xl mx-auto space-y-6">
                 <div className="space-y-2">
                     <h1 className="text-2xl md:text-2xl font-bold text-gray-900 pl-2">Audit Trails</h1>
