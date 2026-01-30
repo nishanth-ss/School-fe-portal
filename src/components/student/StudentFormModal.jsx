@@ -20,7 +20,6 @@ import * as yup from "yup";
 import { useCreateStudentMutation, useUpdateStudentMutation } from "../../hooks/useStudentExactQuery";
 import { uploadFileApi } from "../../service/uploadFile";
 import { useLocationCtx } from "../../context/LocationContext";
-import FaceRecognition from "../faceIdComponent/FaceID";
 import { useDeleteFaceRecognitionMutation, useUserByIdQuery } from "../../hooks/useUsersQuery";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -38,8 +37,12 @@ const studentSchema = yup.object({
     religion: yup.string().required("Religion is required"),
     contact_number: yup
         .string()
-        .matches(/^[0-9]{10}$/, "Must be a valid 10-digit number")
+        .matches(
+            /^\+\d{1,4}\s?\d{6,14}$/,
+            "Enter valid number with country code (ex: +91 9876543210)"
+        )
         .required("Contact number is required"),
+    country_code: yup.string().required(),
     class_info: yup.object({
         class_name: yup.string().required("Class name is required"),
         section: yup.string().required("Section is required"),
@@ -431,13 +434,36 @@ export default function StudentFormModal({
                                 helperText={errors.religion?.message}
                             />
 
-                            <TextField
+                            {/* <TextField
                                 fullWidth
                                 label="Contact Number"
                                 {...register("contact_number")}
                                 error={!!errors.contact_number}
                                 helperText={errors.contact_number?.message}
-                            />
+                            /> */}
+
+                            <div className="grid grid-cols-[30%_70%] gap-2">
+                                <TextField
+                                    select
+                                    label="Code"
+                                    defaultValue="+91"
+                                    {...register("country_code")}
+                                >
+                                    <MenuItem value="+91">🇮🇳 +91</MenuItem>
+                                    <MenuItem value="+1">🇺🇸 +1</MenuItem>
+                                    <MenuItem value="+44">🇬🇧 +44</MenuItem>
+                                    <MenuItem value="+971">🇦🇪 +971</MenuItem>
+                                </TextField>
+
+                                <TextField
+                                    fullWidth
+                                    label="Contact Number"
+                                    placeholder="9876543210"
+                                    {...register("contact_number")}
+                                    error={!!errors.contact_number}
+                                    helperText={errors.contact_number?.message}
+                                />
+                            </div>
 
                             {/* class_info.* */}
                             <TextField

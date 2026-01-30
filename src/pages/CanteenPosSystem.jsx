@@ -374,9 +374,10 @@ const CanteenPosSystem = () => {
       xs=12 => full width on mobile
       md=6  => two columns on desktop
   ========================== */}
-            <Grid container spacing={2} sx={{ width: "100%" }} alignItems="stretch">
+            {/* <Grid container spacing={2} sx={{ width: "100%" }} alignItems="stretch"> */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* LEFT */}
-                <Grid item xs={12} sm={12} md={6} sx={{ width: "100%" }}>
+                <div>
                     <PosLeftCard
                         studentSearchValue={studentSearchValue}
                         setStudentSearchValue={setStudentSearchValue}
@@ -403,10 +404,10 @@ const CanteenPosSystem = () => {
                                 "Student fetch failed"}
                         </Typography>
                     ) : null}
-                </Grid>
+                </div>
 
                 {/* RIGHT */}
-                <Grid item xs={12} sm={12} md={6} sx={{ width: "100%" }}>
+                <div>
                     <Paper variant="outlined" sx={{ borderColor: "#3498db", p: { xs: 1.5, sm: 2 } }}>
                         <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
                             Available Items
@@ -451,8 +452,9 @@ const CanteenPosSystem = () => {
                             )}
                         </Box>
                     </Paper>
-                </Grid>
-            </Grid>
+                </div>
+            {/* </Grid> */}
+            </div>
 
             {openFaceId && (
                 <FaceRecognition

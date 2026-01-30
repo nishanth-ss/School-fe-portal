@@ -130,13 +130,13 @@ const UserManagement = () => {
     );
 
     return (
-        <div>
-            <div className='flex justify-between items-center m-3 md:m-0'>
+        <div className='p-2 md:p-6'>
+            <div className='flex flex-col md:flex-row justify-between items-start md:items-center m-3 md:m-0'>
                 <div>
                     <h1 className='text-2xl text-primary font-bold'>User Management</h1>
                     <h3>Monitor Users</h3>
                 </div>
-                <button className='bg-primary px-4 py-2 text-white rounded-md flex items-center gap-3'
+                <button className='bg-primary px-4 py-2 text-white rounded-md flex items-center gap-3 mx-auto md:mx-0'
                     onClick={() => { setSelectedUser(null); setOpen(true) }}
                 >
                     <Plus />
