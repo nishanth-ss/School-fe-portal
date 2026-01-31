@@ -62,7 +62,7 @@ export default function TransactionHistory() {
             },
             {
                 field: "products",
-                headerName: "Items Purchased",
+                headerName: "Transaction",
                 flex: 2,
                 minWidth: 300,
                 sortable: false,

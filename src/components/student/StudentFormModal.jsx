@@ -28,26 +28,51 @@ const studentSchema = yup.object({
     student_name: yup.string().required("Student name is required"),
     father_name: yup.string().required("Father name is required"),
     mother_name: yup.string().required("Mother name is required"),
-    date_of_birth: yup.string().required("Date of birth is required"),
-    gender: yup.string().required("Gender is required"),
-    birth_place: yup.string().required("Birth place is required"),
-    nationality: yup.string().required("Nationality is required"),
-    mother_tongue: yup.string().required("Mother tongue is required"),
-    blood_group: yup.string().required("Blood group is required"),
-    religion: yup.string().required("Religion is required"),
     contact_number: yup
         .string()
         .matches(
-            /^\+\d{1,4}\s?\d{6,14}$/,
-            "Enter valid number with country code (ex: +91 9876543210)"
+            /^\d{6,14}$/,
+            "Enter a valid contact number"
         )
         .required("Contact number is required"),
     country_code: yup.string().required(),
-    class_info: yup.object({
-        class_name: yup.string().required("Class name is required"),
-        section: yup.string().required("Section is required"),
-        academic_year: yup.string().required("Academic year is required"),
-    }),
+    dateOfBirth: yup
+        .date()
+        .nullable()
+        .max(new Date(), "Future dates are not allowed")
+        .test(
+            "min-age",
+            "Inmate must be at least 19 years old on the admission date",
+            function (dob) {
+                const { admissionDate } = this.parent;
+
+                // ✅ skip validation if empty
+                if (!dob || !admissionDate) return true;
+
+                const admission = new Date(admissionDate);
+                const minDate = new Date(
+                    admission.getFullYear() - 19,
+                    admission.getMonth(),
+                    admission.getDate()
+                );
+
+                return dob <= minDate;
+            }
+        )
+        .optional(),
+    gender: yup.string().required("Gender is required"),
+    birth_place: yup.string().optional(),
+    nationality: yup.string().optional(),
+    mother_tongue: yup.string().optional(),
+    blood_group: yup.string().optional(),
+    religion: yup.string().optional(),
+    class_info: yup
+        .object({
+            class_name: yup.string().optional(),
+            section: yup.string().optional(),
+            academic_year: yup.string().optional(),
+        })
+        .optional(),
     // pro_pic optional (file)
     pro_pic: yup.mixed().nullable(),
 });
@@ -340,7 +365,12 @@ export default function StudentFormModal({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <TextField
                                 fullWidth
-                                label="Registration Number"
+                                label={
+                                    <>
+                                        Registration Number
+                                        <span style={{ color: "red" }}> *</span>
+                                    </>
+                                }
                                 {...register("registration_number")}
                                 error={!!errors.registration_number}
                                 helperText={errors.registration_number?.message}
@@ -348,7 +378,12 @@ export default function StudentFormModal({
 
                             <TextField
                                 fullWidth
-                                label="Student Name"
+                                label={
+                                    <>
+                                        Student Name
+                                        <span style={{ color: "red" }}> *</span>
+                                    </>
+                                }
                                 {...register("student_name")}
                                 error={!!errors.student_name}
                                 helperText={errors.student_name?.message}
@@ -356,7 +391,12 @@ export default function StudentFormModal({
 
                             <TextField
                                 fullWidth
-                                label="Father Name"
+                                label={
+                                    <>
+                                        Father Name
+                                        <span style={{ color: "red" }}> *</span>
+                                    </>
+                                }
                                 {...register("father_name")}
                                 error={!!errors.father_name}
                                 helperText={errors.father_name?.message}
@@ -364,11 +404,63 @@ export default function StudentFormModal({
 
                             <TextField
                                 fullWidth
-                                label="Mother Name"
+                                label={
+                                    <>
+                                        Mother Name
+                                        <span style={{ color: "red" }}> *</span>
+                                    </>
+                                }
                                 {...register("mother_name")}
                                 error={!!errors.mother_name}
                                 helperText={errors.mother_name?.message}
                             />
+
+                            <div className="grid grid-cols-[30%_70%] gap-2">
+                                <TextField
+                                    select
+                                    label="Code"
+                                    defaultValue="+91"
+                                    {...register("country_code")}
+                                >
+                                    <MenuItem value="+91">🇮🇳 +91</MenuItem>
+                                    <MenuItem value="+1">🇺🇸 +1</MenuItem>
+                                    <MenuItem value="+44">🇬🇧 +44</MenuItem>
+                                    <MenuItem value="+971">🇦🇪 +971</MenuItem>
+                                </TextField>
+
+                                <TextField
+                                    fullWidth
+                                    label={
+                                        <>
+                                            Contact Number
+                                            <span style={{ color: "red" }}> *</span>
+                                        </>
+                                    }
+                                    placeholder="9876543210"
+                                    {...register("contact_number")}
+                                    error={!!errors.contact_number}
+                                    helperText={errors.contact_number?.message}
+                                />
+                            </div>
+
+                            <TextField
+                                select
+                                fullWidth
+                                label={
+                                    <>
+                                        Gender
+                                        <span style={{ color: "red" }}> *</span>
+                                    </>
+                                }
+                                defaultValue={defaultValues.gender}
+                                {...register("gender")}
+                                error={!!errors.gender}
+                                helperText={errors.gender?.message}
+                            >
+                                <MenuItem value="Male">Male</MenuItem>
+                                <MenuItem value="Female">Female</MenuItem>
+                                <MenuItem value="Other">Other</MenuItem>
+                            </TextField>
 
                             <TextField
                                 fullWidth
@@ -379,20 +471,6 @@ export default function StudentFormModal({
                                 error={!!errors.date_of_birth}
                                 helperText={errors.date_of_birth?.message}
                             />
-
-                            <TextField
-                                select
-                                fullWidth
-                                label="Gender"
-                                defaultValue={defaultValues.gender}
-                                {...register("gender")}
-                                error={!!errors.gender}
-                                helperText={errors.gender?.message}
-                            >
-                                <MenuItem value="Male">Male</MenuItem>
-                                <MenuItem value="Female">Female</MenuItem>
-                                <MenuItem value="Other">Other</MenuItem>
-                            </TextField>
 
                             <TextField
                                 fullWidth
@@ -433,37 +511,6 @@ export default function StudentFormModal({
                                 error={!!errors.religion}
                                 helperText={errors.religion?.message}
                             />
-
-                            {/* <TextField
-                                fullWidth
-                                label="Contact Number"
-                                {...register("contact_number")}
-                                error={!!errors.contact_number}
-                                helperText={errors.contact_number?.message}
-                            /> */}
-
-                            <div className="grid grid-cols-[30%_70%] gap-2">
-                                <TextField
-                                    select
-                                    label="Code"
-                                    defaultValue="+91"
-                                    {...register("country_code")}
-                                >
-                                    <MenuItem value="+91">🇮🇳 +91</MenuItem>
-                                    <MenuItem value="+1">🇺🇸 +1</MenuItem>
-                                    <MenuItem value="+44">🇬🇧 +44</MenuItem>
-                                    <MenuItem value="+971">🇦🇪 +971</MenuItem>
-                                </TextField>
-
-                                <TextField
-                                    fullWidth
-                                    label="Contact Number"
-                                    placeholder="9876543210"
-                                    {...register("contact_number")}
-                                    error={!!errors.contact_number}
-                                    helperText={errors.contact_number?.message}
-                                />
-                            </div>
 
                             {/* class_info.* */}
                             <TextField
