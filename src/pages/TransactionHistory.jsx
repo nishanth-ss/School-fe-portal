@@ -66,15 +66,158 @@ export default function TransactionHistory() {
                 flex: 2,
                 minWidth: 300,
                 sortable: false,
+                //     const row = params.row;
+                //     const tx = row.raw;
+
+                //     if (tx.source === "FINANCIAL") {
+                //         // Financial: show deposit/withdrawal/work details like your old UI
+
+                //             if(tx.type === "CREDIT" && tx.depositType === "ONLINE_PAYMENT"){
+                //             <div className="whitespace-normal wrap-break-word leading-5 py-2">
+                //                 <div>
+                //                     <b>Online Payment</b>{" "}
+                //                     {/* <span className="text-gray-600">{tx?.workAssignId?.name || "-"}</span> */}
+                //                 </div>
+                //             </div>
+                //         }
+                //         if (tx.type === "deposit") {
+                //             return (
+                //                 <div className="whitespace-normal wrap-break-word leading-5 py-2">
+                //                     <div>
+                //                         <b>Deposit Type:</b> <span className="text-gray-600">{tx.depositType || "-"}</span>
+                //                     </div>
+                //                     <div>
+                //                         <b>Relation:</b> <span className="text-gray-600">{tx.relationShipId || "-"}</span>
+                //                     </div>
+                //                 </div>
+                //             );
+                //         }
+                //         if (tx.type === "withdrawal") {
+                //             return (
+                //                 <div className="whitespace-normal wrap-break-word leading-5 py-2">
+                //                     <div>
+                //                         <b>Withdrawal Type:</b>{" "}
+                //                         <span className="text-gray-600">{tx.depositType || "-"}</span>
+                //                     </div>
+                //                     <div>
+                //                         <b>Relation:</b> <span className="text-gray-600">{tx.relationShipId || "-"}</span>
+                //                     </div>
+                //                 </div>
+                //             );
+                //         }
+
+                //         return (
+                //             <div className="whitespace-normal wrap-break-word leading-5 py-2">
+                //                 <div>
+                //                     <b>Work Assignment:</b>{" "}
+                //                     <span className="text-gray-600">{tx?.workAssignId?.name || "-"}</span>
+                //                 </div>
+                //                 <div>
+                //                     <b>Hours Worked:</b>{" "}
+                //                     <span className="text-gray-600">{tx.hoursWorked ?? "-"}</span>
+                //                 </div>
+                //             </div>
+                //         );
+                //     }
+
+                //     // POS/Products
+                //     const products = tx.products || [];
+                //     if (!products.length) return "-";
+
+                //     return (
+                //         <div className="whitespace-normal wrap-break-word leading-5 py-2">
+                //             {products.map((p) => (
+                //                 <div key={p._id}>
+                //                     <b>{p?.productId?.itemName || "-"}</b>{" "}
+                //                     <span className="text-gray-500">× {p.quantity}</span>{" "}
+                //                     <span className="text-gray-400">(₹{p?.productId?.price || 0} each)</span>
+                //                 </div>
+                //             ))}
+                //             <div className="text-xs text-gray-500 mt-1">Total items: {row.totalItems}</div>
+                //         </div>
+                //     );
+                // },
                 renderCell: (params) => {
                     const row = params.row;
                     const tx = row.raw;
 
                     if (tx.source === "FINANCIAL") {
-                        // Financial: show deposit/withdrawal/work details like your old UI
-                        if (tx.type === "deposit") {
+                        const isOnlinePayment = tx.depositType === "ONLINE_PAYMENT";
+
+                        // normalize "amount"
+                        const amount = Number(tx.depositAmount ?? tx.amount ?? 0);
+                        const isZeroAmount = amount === 0;
+
+                        // classify by transaction string (your API uses this)
+                        const txAction = String(tx.transaction || "").toUpperCase(); // e.g. "WITHDRAW"
+                        const isWithdraw = txAction === "WITHDRAW" || txAction === "WITHDRAWAL";
+                        const isDeposit = txAction === "DEPOSIT" || txAction === "CREDIT";
+
+                        // ✅ Online payment
+                        if (tx.type === "CREDIT" && isOnlinePayment) {
                             return (
-                                <div className="whitespace-normal wrap-break-word leading-5 py-2">
+                                <div className="whitespace-normal break-words leading-5 py-2">
+                                    <div><b>Online Payment</b></div>
+
+                                    <div>
+                                        <b>Deposit Name:</b>{" "}
+                                        <span className="text-gray-600">{tx.depositName || "-"}</span>
+                                    </div>
+
+                                    <div className="text-xs text-gray-500 mt-1">{tx.remarks || ""}</div>
+                                </div>
+                            );
+                        }
+
+                        // ✅ Withdraw (covers your CASH + WITHDRAW case)
+                        if (isWithdraw) {
+                            return (
+                                <div className="whitespace-normal break-words leading-5 py-2">
+                                    <div><b>Withdraw</b></div>
+
+                                    <div>
+                                        <b>Type:</b>{" "}
+                                        <span className="text-gray-600">{tx.type || "-"}</span>
+                                    </div>
+
+                                    <div>
+                                        <b>By:</b>{" "}
+                                        <span className="text-gray-600">{tx.depositedByType || "-"}</span>
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        // ✅ Deposit (generic)
+                        if (isDeposit) {
+                            return (
+                                <div className="whitespace-normal break-words leading-5 py-2">
+                                    <div><b>Deposit</b></div>
+
+                                    <div>
+                                        <b>Deposit Type:</b>{" "}
+                                        <span className="text-gray-600">{tx.depositType || "-"}</span>
+                                    </div>
+
+                                    <div>
+                                        <b>Deposit Name:</b>{" "}
+                                        <span className="text-gray-600">{tx.depositName || "-"}</span>
+                                    </div>
+
+                                    <div>
+                                        <b>Amount:</b>{" "}
+                                        <span className={isZeroAmount ? "text-red-600 font-semibold" : "text-gray-600"}>
+                                            ₹{amount}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        // ✅ Final fallback for any other financial records (no more work assignment here)
+                        return (
+                            <div className="whitespace-normal break-words leading-5 py-2">
+                                <div className="whitespace-normal wrap-break-word py-2">
                                     <div>
                                         <b>Deposit Type:</b> <span className="text-gray-600">{tx.depositType || "-"}</span>
                                     </div>
@@ -82,41 +225,16 @@ export default function TransactionHistory() {
                                         <b>Relation:</b> <span className="text-gray-600">{tx.relationShipId || "-"}</span>
                                     </div>
                                 </div>
-                            );
-                        }
-                        if (tx.type === "withdrawal") {
-                            return (
-                                <div className="whitespace-normal wrap-break-word leading-5 py-2">
-                                    <div>
-                                        <b>Withdrawal Type:</b>{" "}
-                                        <span className="text-gray-600">{tx.depositType || "-"}</span>
-                                    </div>
-                                    <div>
-                                        <b>Relation:</b> <span className="text-gray-600">{tx.relationShipId || "-"}</span>
-                                    </div>
-                                </div>
-                            );
-                        }
-                        return (
-                            <div className="whitespace-normal wrap-break-word leading-5 py-2">
-                                <div>
-                                    <b>Work Assignment:</b>{" "}
-                                    <span className="text-gray-600">{tx?.workAssignId?.name || "-"}</span>
-                                </div>
-                                <div>
-                                    <b>Hours Worked:</b>{" "}
-                                    <span className="text-gray-600">{tx.hoursWorked ?? "-"}</span>
-                                </div>
                             </div>
                         );
                     }
 
-                    // POS/Products
+                    // ... POS/products unchanged
                     const products = tx.products || [];
                     if (!products.length) return "-";
 
                     return (
-                        <div className="whitespace-normal wrap-break-word leading-5 py-2">
+                        <div className="whitespace-normal break-words leading-5 py-2">
                             {products.map((p) => (
                                 <div key={p._id}>
                                     <b>{p?.productId?.itemName || "-"}</b>{" "}
@@ -127,8 +245,12 @@ export default function TransactionHistory() {
                             <div className="text-xs text-gray-500 mt-1">Total items: {row.totalItems}</div>
                         </div>
                     );
-                },
+                }
+
             },
+
+            // POS / Products
+
             {
                 field: "categories",
                 headerName: "Categories",
@@ -161,7 +283,10 @@ export default function TransactionHistory() {
                 flex: 0.7,
                 minWidth: 160,
                 renderCell: (params) => (
-                    <span className="font-semibold text-green-600">{params.value}</span>
+                    <span className={`font-semibold ${params?.value > 0
+                            ? "text-green-600"
+                            :  "text-red-600"
+                        }`}>{params.value}</span>
                 ),
             },
             {
