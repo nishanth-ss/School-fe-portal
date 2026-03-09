@@ -190,7 +190,7 @@ function StoreInventory() {
               flexDirection: { xs: "column", sm: "row" },
               alignItems: { xs: "stretch", sm: "center" },
               gap: 2,
-              flexWrap: "wrap",
+              // flexWrap: "wrap",
               width: "100%",
             }}
           >
