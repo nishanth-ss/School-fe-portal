@@ -260,12 +260,12 @@ const CanteenPosSystem = () => {
                     </Typography>
                 ) : null}
 
-                {!purchasesLoading && purchasesError && filteredPurchases.length === 0 ? (
+                {/* {!purchasesLoading && purchasesError && filteredPurchases.length === 0 ? (
                     <Typography color="error">
                         Error loading purchases:{" "}
                         {purchasesError?.message || purchasesError?.response?.data?.message}
                     </Typography>
-                ) : null}
+                ) : null} */}
 
                 {!purchasesLoading && filteredPurchases.length > 0 ? (
                     filteredPurchases.map((p) => (
@@ -415,36 +415,57 @@ const CanteenPosSystem = () => {
 
                         <Box sx={{ display: "flex", flexDirection: "column", gap: 1, maxHeight: 380, overflowY: "auto" }}>
                             {availableItems?.length ? (
-                                availableItems.map((item) => (
-                                    <Box
-                                        key={item._id}
-                                        onClick={() => setCartItems((prev) => [...prev, item])}
-                                        sx={{
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                            gap: 2,
-                                            p: 1.5,
-                                            borderRadius: 2,
-                                            cursor: "pointer",
-                                            border: "1px solid #3498db",
-                                            "&:hover": { backgroundColor: "#f9fafb" },
-                                        }}
-                                    >
-                                        <Box sx={{ minWidth: 0 }}>
-                                            <Typography fontWeight={600} noWrap>
-                                                {item.itemName}
-                                            </Typography>
-                                            <Typography variant="body2" color="text.secondary" noWrap>
-                                                Stock: {item.stockQuantity}
-                                            </Typography>
-                                        </Box>
+                                availableItems.map((item) => {
+                                    const isInactive = item?.status !== "Active";
 
-                                        <Typography fontWeight={600} sx={{ flexShrink: 0 }}>
-                                            ₹{item.price}
-                                        </Typography>
-                                    </Box>
-                                ))
+                                    return (
+                                        <Box
+                                            key={item._id}
+                                            onClick={() => {
+                                                if (!isInactive) {
+                                                    setCartItems((prev) => [...prev, item]);
+                                                }
+                                            }}
+                                            sx={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                gap: 2,
+                                                p: 1.5,
+                                                borderRadius: 2,
+                                                cursor: isInactive ? "not-allowed" : "pointer",
+                                                border: "1px solid #3498db",
+                                                opacity: isInactive ? 0.5 : 1,
+                                                "&:hover": { backgroundColor: isInactive ? "inherit" : "#f9fafb" },
+                                            }}
+                                        >
+                                            <Box sx={{ minWidth: 0 }}>
+                                                <Typography fontWeight={600} noWrap>
+                                                    {item.itemName}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary" noWrap>
+                                                    Stock: {item.stockQuantity}
+                                                </Typography>
+                                            </Box>
+
+                                            <div>
+                                                <Typography
+                                                    fontWeight={600}
+                                                    sx={{ flexShrink: 0, textAlign: "center" }}
+                                                >
+                                                    ₹{item.price}
+                                                </Typography>
+
+                                                <span
+                                                    className={`px-3 py-1 rounded text-white ${item?.status === "Active" ? "bg-green-400" : "bg-red-400"
+                                                        }`}
+                                                >
+                                                    {item.status}
+                                                </span>
+                                            </div>
+                                        </Box>
+                                    );
+                                })
                             ) : (
                                 <Typography color="text.secondary" align="center" sx={{ py: 3 }}>
                                     No items available
@@ -453,7 +474,7 @@ const CanteenPosSystem = () => {
                         </Box>
                     </Paper>
                 </div>
-            {/* </Grid> */}
+                {/* </Grid> */}
             </div>
 
             {openFaceId && (
