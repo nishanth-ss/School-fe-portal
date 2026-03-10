@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Card,
     CardContent,
@@ -47,6 +47,7 @@ export default function Reports() {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [student, setStudent] = useState(null);
+    const [boardName, setBoardName] = useState("");
 
     const { data: stats } = useQuickStatisticsQuery();
     const [studentSearch, setStudentSearch] = useState("");
@@ -132,7 +133,11 @@ export default function Reports() {
                 url: apiUrl.apiUrl,
                 payload:
                     apiUrl.id === 1
-                        ? { ...payload, registration_number: student?.registration_number }
+                        ? {
+                            ...payload,
+                            registration_number: student?.registration_number,
+                            ...(boardName ? { board_name: boardName } : {}),
+                        }
                         : payload,
                 format,
             });
@@ -209,7 +214,7 @@ export default function Reports() {
                                 label="Frequency"
                                 value={frequency}
                                 onChange={(e) => setFrequency(e.target.value)}
-                                sx={{marginBottom: "1rem"}}
+                                sx={{ marginBottom: "1rem" }}
                             >
                                 <MenuItem value="">
                                     Select frequency
@@ -252,42 +257,61 @@ export default function Reports() {
                             </>
                         )}
 
+                        <TextField
+                            fullWidth
+                            select
+                            size="large"
+                            label="Board Name"
+                            value={boardName}
+                            onChange={(e) => setBoardName(e.target.value)}
+                            sx={{ marginBottom: "1rem" }}
+                        >
+                            <MenuItem value="">All Boards</MenuItem>
+                            <MenuItem value="CBSE Board">CBSE Board</MenuItem>
+                            <MenuItem value="ICSE Board">ICSE Board</MenuItem>
+                            <MenuItem value="Gujarat Board (GSEB)">
+                                Gujarat Board (GSEB)
+                            </MenuItem>
+                        </TextField>
+
                         {apiUrl.id === 1 && (
-                            <Autocomplete
-                                options={students}
-                                value={student}
-                                loading={isFetching}
-                                filterOptions={(x) => x} // ✅ disable client filtering
-                                onChange={(_, v) => setStudent(v)}
-                                onInputChange={(_, value, reason) => {
-                                    // reason guards avoid resetting when selecting option
-                                    if (reason === "input") {
-                                        setStudentSearch(value);
-                                        setPage(1); // ✅ reset to first page on new search
+                            <>
+                                <Autocomplete
+                                    options={students}
+                                    value={student}
+                                    loading={isFetching}
+                                    filterOptions={(x) => x}
+                                    onChange={(_, v) => setStudent(v)}
+                                    onInputChange={(_, value, reason) => {
+                                        // reason guards avoid resetting when selecting option
+                                        if (reason === "input") {
+                                            setStudentSearch(value);
+                                            setPage(1); // reset to first page on new search
+                                        }
+                                    }}
+                                    getOptionLabel={(o) =>
+                                        o ? `${o.registration_number} - ${o.student_name}` : ""
                                     }
-                                }}
-                                getOptionLabel={(o) =>
-                                    o ? `${o.registration_number} - ${o.student_name}` : ""
-                                }
-                                isOptionEqualToValue={(o, v) => o?._id === v?._id}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Search Student ID"
-                                        size="small"
-                                        placeholder="Type registration number..."
-                                        InputProps={{
-                                            ...params.InputProps,
-                                            endAdornment: (
-                                                <>
-                                                    {isFetching ? <CircularProgress size={18} /> : null}
-                                                    {params.InputProps.endAdornment}
-                                                </>
-                                            ),
-                                        }}
-                                    />
-                                )}
-                            />
+                                    isOptionEqualToValue={(o, v) => o?._id === v?._id}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Search Student ID"
+                                            size="medium"
+                                            placeholder="Type registration number..."
+                                            InputProps={{
+                                                ...params.InputProps,
+                                                endAdornment: (
+                                                    <>
+                                                        {isFetching ? <CircularProgress size={18} /> : null}
+                                                        {params.InputProps.endAdornment}
+                                                    </>
+                                                ),
+                                            }}
+                                        />
+                                    )}
+                                />
+                            </>
                         )}
 
                         <Select fullWidth value={format} onChange={(e) => setFormat(e.target.value)}>
