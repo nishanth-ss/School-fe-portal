@@ -76,15 +76,17 @@ export default function Reports() {
     ======================= */
 
     const payload = useMemo(() => {
+        let basePayload;
+
         if (apiUrl.id === 2) {
-            return { dateRange: frequency, format };
+            basePayload = { dateRange: frequency, format };
+        } else if (dateRange === "custom") {
+            basePayload = { startDate, endDate, format };
+        } else {
+            basePayload = { dateRange, format };
         }
 
-        if (dateRange === "custom") {
-            return { startDate, endDate, format };
-        }
-
-        return { dateRange, format };
+        return basePayload;
     }, [apiUrl, dateRange, startDate, endDate, format, frequency]);
 
     /* =======================
@@ -129,18 +131,19 @@ export default function Reports() {
 
     const generate = async () => {
         try {
-            const res = await reportMutation.mutateAsync({
-                url: apiUrl.apiUrl,
-                payload:
-                    apiUrl.id === 1
-                        ? {
-                            ...payload,
-                            registration_number: student?.registration_number,
-                            ...(boardName ? { board_name: boardName } : {}),
-                        }
-                        : payload,
-                format,
-            });
+                const res = await reportMutation.mutateAsync({
+                    url: apiUrl.apiUrl,
+                    payload: {
+                        ...payload,
+                        ...(apiUrl.id === 1
+                            ? { registration_number: student?.registration_number }
+                            : {}),
+                        ...([1, 2, 3, 5].includes(apiUrl.id) && boardName
+                            ? { board_name: boardName }
+                            : {}),
+                    },
+                    format,
+                });
 
             if (format === "csv") {
                 const blob = new Blob([res], { type: "text/csv" });
@@ -257,25 +260,25 @@ export default function Reports() {
                             </>
                         )}
 
-                        <TextField
-                            fullWidth
-                            select
-                            size="large"
-                            label="Board Name"
-                            value={boardName}
-                            onChange={(e) => setBoardName(e.target.value)}
-                            sx={{ marginBottom: "1rem" }}
-                        >
-                            <MenuItem value="">All Boards</MenuItem>
-                            <MenuItem value="CBSE Board">CBSE Board</MenuItem>
-                            <MenuItem value="ICSE Board">ICSE Board</MenuItem>
-                            <MenuItem value="Gujarat Board (GSEB)">
-                                Gujarat Board (GSEB)
-                            </MenuItem>
-                        </TextField>
-
-                        {apiUrl.id === 1 && (
+                        {[1, 2, 3, 5].includes(apiUrl.id) && (
                             <>
+                                <TextField
+                                    fullWidth
+                                    select
+                                    size="large"
+                                    label="Board Name"
+                                    value={boardName}
+                                    onChange={(e) => setBoardName(e.target.value)}
+                                    sx={{ marginBottom: "1rem" }}
+                                >
+                                    <MenuItem value="">All Boards</MenuItem>
+                                    <MenuItem value="CBSE Board">CBSE Board</MenuItem>
+                                    <MenuItem value="ICSE Board">ICSE Board</MenuItem>
+                                    <MenuItem value="Gujarat Board (GSEB)">
+                                        Gujarat Board (GSEB)
+                                    </MenuItem>
+                                </TextField>
+
                                 <Autocomplete
                                     options={students}
                                     value={student}
