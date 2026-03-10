@@ -62,7 +62,8 @@ export default function StudentManagement() {
       nationality: s?.nationality || "",
       mother_tongue: s?.mother_tongue || "",
       blood_group: s?.blood_group || "",
-      religion: s?.religion || "",
+      board_name: s?.board_name || "",
+      hostel_name: s?.hostel_name || "",
       contact_number: s?.contact_number || "",
       date_of_birth: s?.date_of_birth,
       class_info: {
@@ -106,7 +107,7 @@ export default function StudentManagement() {
 
   const columns = useMemo(
     () => [
-      { field: "registration_number", headerName: "Reg No", width: 120 },
+      { field: "registration_number", headerName: "Roll No", width: 120 },
       { field: "student_name", headerName: "Student Name", flex: 1, minWidth: 150 },
       { field: "father_name", headerName: "Father Name", flex: 1, minWidth: 150 },
       { field: "contact_number", headerName: "Contact", width: 140 },

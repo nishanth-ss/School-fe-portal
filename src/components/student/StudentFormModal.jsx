@@ -61,14 +61,18 @@ const studentSchema = yup.object({
         )
         .optional(),
     gender: yup.string().required("Gender is required"),
-    birth_place: yup.string().optional(),
-    nationality: yup.string().optional(),
-    mother_tongue: yup.string().optional(),
     blood_group: yup.string().optional(),
-    religion: yup.string().optional(),
+    hostel_name: yup.string().optional(),
+    board_name: yup.string().optional(),
     class_info: yup
         .object({
-            class_name: yup.string().optional(),
+            class_name: yup
+                .string()
+                .test("class-std-range", "Class std must be between 1 and 10", (value) => {
+                    if (value === undefined || value === null || value === "") return true;
+                    return /^(?:[1-9]|10)$/.test(String(value));
+                })
+                .optional(),
             section: yup.string().optional(),
             academic_year: yup.string().optional(),
         })
@@ -130,11 +134,9 @@ export default function StudentFormModal({
             mother_name: selectedStudent?.mother_name || "",
             date_of_birth: toDateInput(selectedStudent?.date_of_birth) || "",
             gender: selectedStudent?.gender || "",
-            birth_place: selectedStudent?.birth_place || "",
-            nationality: selectedStudent?.nationality || "",
-            mother_tongue: selectedStudent?.mother_tongue || "",
+            board_name: selectedStudent?.board_name || "",
             blood_group: selectedStudent?.blood_group || "",
-            religion: selectedStudent?.religion || "",
+            hostel_name: selectedStudent?.hostel_name || "",
             contact_number: selectedStudent?.contact_number || "",
             class_info: {
                 class_name: selectedStudent?.class_info?.class_name || "",
@@ -367,7 +369,7 @@ export default function StudentFormModal({
                                 fullWidth
                                 label={
                                     <>
-                                        Registration Number
+                                        Roll No
                                         <span style={{ color: "red" }}> *</span>
                                     </>
                                 }
@@ -474,27 +476,19 @@ export default function StudentFormModal({
 
                             <TextField
                                 fullWidth
-                                label="Birth Place"
-                                {...register("birth_place")}
-                                error={!!errors.birth_place}
-                                helperText={errors.birth_place?.message}
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="Nationality"
-                                {...register("nationality")}
-                                error={!!errors.nationality}
-                                helperText={errors.nationality?.message}
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="Mother Tongue"
-                                {...register("mother_tongue")}
-                                error={!!errors.mother_tongue}
-                                helperText={errors.mother_tongue?.message}
-                            />
+                                select
+                                label="Board Name"
+                                defaultValue={defaultValues.board_name}
+                                {...register("board_name")}
+                                error={!!errors.board_name}
+                                helperText={errors.board_name?.message}
+                            >
+                                <MenuItem value="CBSE Board">CBSE board_name</MenuItem>
+                                <MenuItem value="ICSE Board">ICSE board_name</MenuItem>
+                                <MenuItem value="Gujarat Board (GSEB)">
+                                    Gujarat board_name (GSEB)
+                                </MenuItem>
+                            </TextField>
 
                             <TextField
                                 fullWidth
@@ -506,18 +500,28 @@ export default function StudentFormModal({
 
                             <TextField
                                 fullWidth
-                                label="Religion"
-                                {...register("religion")}
-                                error={!!errors.religion}
-                                helperText={errors.religion?.message}
+                                label="Hostel Name"
+                                {...register("hostel_name")}
+                                error={!!errors.hostel_name}
+                                helperText={errors.hostel_name?.message}
                             />
 
                             {/* class_info.* */}
                             <TextField
                                 fullWidth
-                                label="Class Name"
-                                {...register("class_info.class_name")}
+                                type="number"
+                                label="Class std"
+                                inputProps={{ min: 1, max: 10, step: 1 }}
+                                {...register("class_info.class_name", {
+                                    setValueAs: (value) => {
+                                        if (value === undefined || value === null || value === "") return "";
+                                        const parsed = parseInt(value, 10);
+                                        if (Number.isNaN(parsed)) return "";
+                                        return String(Math.min(10, Math.max(1, parsed)));
+                                    },
+                                })}
                                 error={!!errors.class_info?.class_name}
+                                onWheel={(e) => e.target.blur()}
                                 helperText={errors.class_info?.class_name?.message}
                             />
 
