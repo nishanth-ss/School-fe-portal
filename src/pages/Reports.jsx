@@ -272,11 +272,12 @@ export default function Reports() {
                                     sx={{ marginBottom: "1rem" }}
                                 >
                                     <MenuItem value="">All Boards</MenuItem>
-                                    <MenuItem value="CBSE Board">CBSE Board</MenuItem>
-                                    <MenuItem value="ICSE Board">ICSE Board</MenuItem>
-                                    <MenuItem value="Gujarat Board (GSEB)">
-                                        Gujarat Board (GSEB)
+                                    <MenuItem value="State">
+                                        State
                                     </MenuItem>
+                                    <MenuItem value="CBSE">CBSE</MenuItem>
+                                    <MenuItem value="ICSE">ICSE</MenuItem>
+                                    <MenuItem value="IB">IB</MenuItem>
                                 </TextField>
 
                                 <Autocomplete

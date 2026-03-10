@@ -107,11 +107,11 @@ export default function StudentManagement() {
 
   const columns = useMemo(
     () => [
-      { field: "registration_number", headerName: "Roll No", width: 120 },
-      { field: "student_name", headerName: "Student Name", flex: 1, minWidth: 150 },
-      { field: "father_name", headerName: "Father Name", flex: 1, minWidth: 150 },
-      { field: "contact_number", headerName: "Contact", width: 140 },
-      { field: "gender", headerName: "Gender", width: 100 },
+      { field: "registration_number", headerName: "Roll No", flex: 1 },
+      { field: "student_name", headerName: "Student Name", flex: 1, minWidth: 120 },
+      { field: "father_name", headerName: "Father Name", flex: 1, minWidth: 120 },
+      { field: "contact_number", headerName: "Contact", flex: 1 },
+      { field: "board_name", headerName: "Board", flex: 1 },
       {
         field: "class",
         headerName: "Class",
@@ -119,7 +119,7 @@ export default function StudentManagement() {
         valueGetter: (_, row) => `${row.class_name} - ${row.section}`,
         sortable: false,
       },
-      { field: "academic_year", headerName: "Year", width: 130 },
+      { field: "hostel_name", headerName: "Hostel", flex: 1 },
       {
         field: "deposite_amount",
         headerName: "Balance",
@@ -128,12 +128,12 @@ export default function StudentManagement() {
           <span className="font-semibold text-green-700">₹{params.value}</span>
         ),
       },
-      {
-        field: "createdAt",
-        headerName: "Created",
-        width: 190,
-        renderCell: (params) => <span>{formatDate(params.value)}</span>,
-      },
+      // {
+      //   field: "createdAt",
+      //   headerName: "Created",
+      //   width: 190,
+      //   renderCell: (params) => <span>{formatDate(params.value)}</span>,
+      // },
       {
         field: "action",
         headerName: "Action",

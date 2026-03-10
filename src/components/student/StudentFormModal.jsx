@@ -61,9 +61,8 @@ const studentSchema = yup.object({
         )
         .optional(),
     gender: yup.string().required("Gender is required"),
-    blood_group: yup.string().optional(),
-    hostel_name: yup.string().optional(),
-    board_name: yup.string().optional(),
+    hostel_name: yup.string().required("Hostel name is required"),
+    board_name: yup.string().required("Board Name is required"),
     class_info: yup
         .object({
             class_name: yup
@@ -132,7 +131,6 @@ export default function StudentFormModal({
             student_name: selectedStudent?.student_name || "",
             father_name: selectedStudent?.father_name || "",
             mother_name: selectedStudent?.mother_name || "",
-            date_of_birth: toDateInput(selectedStudent?.date_of_birth) || "",
             gender: selectedStudent?.gender || "",
             board_name: selectedStudent?.board_name || "",
             blood_group: selectedStudent?.blood_group || "",
@@ -464,7 +462,7 @@ export default function StudentFormModal({
                                 <MenuItem value="Other">Other</MenuItem>
                             </TextField>
 
-                            <TextField
+                            {/* <TextField
                                 fullWidth
                                 label="Date of Birth"
                                 type="date"
@@ -472,35 +470,39 @@ export default function StudentFormModal({
                                 {...register("date_of_birth")}
                                 error={!!errors.date_of_birth}
                                 helperText={errors.date_of_birth?.message}
-                            />
+                            /> */}
 
                             <TextField
                                 fullWidth
                                 select
-                                label="Board Name"
+                                label={
+                                    <>
+                                        Select Board
+                                        <span style={{ color: "red" }}> *</span>
+                                    </>
+                                }
                                 defaultValue={defaultValues.board_name}
                                 {...register("board_name")}
                                 error={!!errors.board_name}
                                 helperText={errors.board_name?.message}
                             >
-                                <MenuItem value="CBSE Board">CBSE board_name</MenuItem>
-                                <MenuItem value="ICSE Board">ICSE board_name</MenuItem>
-                                <MenuItem value="Gujarat Board (GSEB)">
-                                    Gujarat board_name (GSEB)
+                                <MenuItem value="State">
+                                    State
                                 </MenuItem>
+                                <MenuItem value="CBSE">CBSE</MenuItem>
+                                <MenuItem value="ICSE">ICSE</MenuItem>
+                                <MenuItem value="IB">IB</MenuItem>
+
                             </TextField>
 
                             <TextField
                                 fullWidth
-                                label="Blood Group"
-                                {...register("blood_group")}
-                                error={!!errors.blood_group}
-                                helperText={errors.blood_group?.message}
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="Hostel Name"
+                                label={
+                                    <>
+                                    Hostel Name
+                                     <span style={{ color: "red" }}> *</span>
+                                    </>
+                                }
                                 {...register("hostel_name")}
                                 error={!!errors.hostel_name}
                                 helperText={errors.hostel_name?.message}
@@ -510,7 +512,7 @@ export default function StudentFormModal({
                             <TextField
                                 fullWidth
                                 type="number"
-                                label="Class std"
+                                label="Class Std"
                                 inputProps={{ min: 1, max: 10, step: 1 }}
                                 {...register("class_info.class_name", {
                                     setValueAs: (value) => {
