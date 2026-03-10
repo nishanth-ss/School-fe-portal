@@ -457,7 +457,7 @@ const CanteenPosSystem = () => {
                                                 </Typography>
 
                                                 <span
-                                                    className={`px-3 py-1 rounded text-white ${item?.status === "Active" ? "bg-green-400" : "bg-red-400"
+                                                    className={`px-3 py-1 rounded-2xl text-sm text-white ${item?.status === "Active" ? "bg-green-400" : "bg-red-400"
                                                         }`}
                                                 >
                                                     {item.status}
