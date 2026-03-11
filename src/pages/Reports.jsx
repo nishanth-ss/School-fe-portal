@@ -9,6 +9,8 @@ import {
     TextField,
     Autocomplete,
     CircularProgress,
+    Checkbox,
+    FormControlLabel,
 } from "@mui/material";
 import {
     BarChart3,
@@ -48,6 +50,7 @@ export default function Reports() {
     const [endDate, setEndDate] = useState("");
     const [student, setStudent] = useState(null);
     const [boardName, setBoardName] = useState("");
+    const [filterByStudent, setFilterByStudent] = useState(false);
 
     const { data: stats } = useQuickStatisticsQuery();
     const [studentSearch, setStudentSearch] = useState("");
@@ -93,6 +96,64 @@ export default function Reports() {
        PDF
     ======================= */
 
+    const sanitizeFileName = (name) =>
+        String(name ?? "report")
+            .trim()
+            .replace(/\s+/g, "_")
+            .replace(/[^\w.-]/g, "_");
+
+    const toTitleCase = (s) =>
+        String(s ?? "")
+            .toLowerCase()
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    const formatHeader = (key) => {
+        const parts = String(key ?? "")
+            .split(".")
+            .map((p) =>
+                p
+                    .replace(/_/g, " ")
+                    .replace(/([a-z])([A-Z])/g, "$1 $2")
+                    .trim()
+            )
+            .filter(Boolean);
+
+        return toTitleCase(parts.join(" / "));
+    };
+
+    const shouldExcludeKey = (key) => {
+        const k = String(key ?? "");
+        if (k === "_id" || k === "__v") return true;
+        if (k.endsWith("._id")) return true;
+        return false;
+    };
+
+    const normalizeRows = (input) => {
+        if (Array.isArray(input)) return input;
+        if (typeof Blob !== "undefined" && input instanceof Blob) return [];
+        if (input && typeof input === "object") {
+            if (Array.isArray(input.data)) return input.data;
+            if (input.data && typeof input.data === "object") {
+                const nested = normalizeRows(input.data);
+                if (nested.length) return nested;
+            }
+            if (Array.isArray(input.rows)) return input.rows;
+            if (input.rows && typeof input.rows === "object") {
+                const nested = normalizeRows(input.rows);
+                if (nested.length) return nested;
+            }
+            if (Array.isArray(input.transactions)) return input.transactions;
+            if (input.transactions && typeof input.transactions === "object") {
+                const nested = normalizeRows(input.transactions);
+                if (nested.length) return nested;
+            }
+            if (Array.isArray(input.records)) return input.records;
+            if (Array.isArray(input.results)) return input.results;
+            return [input];
+        }
+        return [];
+    };
+
     const flatten = (obj, prefix = "") => {
         const out = {};
         for (const k in obj) {
@@ -101,28 +162,517 @@ export default function Reports() {
             if (val && typeof val === "object" && !Array.isArray(val)) {
                 Object.assign(out, flatten(val, key));
             } else {
-                out[key] = Array.isArray(val) ? val.join(", ") : val ?? "";
+                out[key] = Array.isArray(val)
+                    ? val
+                          .map((v) =>
+                              v && typeof v === "object" ? JSON.stringify(v) : String(v ?? "")
+                          )
+                          .join(", ")
+                    : val ?? "";
             }
         }
         return out;
     };
 
-    const createPDF = (rows, title) => {
-        const flat = rows.map(flatten);
-        const cols = [...new Set(flat.flatMap(Object.keys))];
-        const body = flat.map((r) => cols.map((c) => r[c] ?? ""));
+    const getByPath = (obj, path) => {
+        if (!obj || typeof obj !== "object") return undefined;
+        const parts = String(path ?? "").split(".").filter(Boolean);
+        let cur = obj;
+        for (const p of parts) {
+            if (cur == null) return undefined;
+            // bracket access works for non-enumerable props too
+            cur = cur[p];
+        }
+        return cur;
+    };
 
-        const doc = new jsPDF("l", "pt", "a4");
-        doc.text(title, 40, 40);
+    const formatDateTime = (value) => {
+        if (value == null) return "";
+        const s = String(value);
+        // ISO date support (e.g. 2026-03-11T06:52:07.063Z)
+        if (s.includes("T")) {
+            const d = new Date(s);
+            if (!Number.isNaN(d.getTime())) {
+                return d.toLocaleString(undefined, {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                });
+            }
+        }
+        return s;
+    };
 
-        autoTable(doc, {
-            head: [cols],
-            body,
-            startY: 60,
-            styles: { fontSize: 7 },
+    const escapeHtml = (value) =>
+        String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+
+    const createExcelBlobFromTable = ({ sheetName, headers, rows }) => {
+        const safeSheetName = String(sheetName ?? "Sheet1").slice(0, 31);
+        const thead = `<tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr>`;
+        const tbody = rows
+            .map(
+                (r) =>
+                    `<tr>${r
+                        .map((cell) => `<td>${escapeHtml(cell)}</td>`)
+                        .join("")}</tr>`
+            )
+            .join("");
+
+        // Excel-friendly HTML (opens as .xls)
+        const html = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:x="urn:schemas-microsoft-com:office:excel"
+      xmlns="http://www.w3.org/TR/REC-html40">
+  <head>
+    <meta charset="utf-8" />
+    <!--[if gte mso 9]>
+    <xml>
+      <x:ExcelWorkbook>
+        <x:ExcelWorksheets>
+          <x:ExcelWorksheet>
+            <x:Name>${escapeHtml(safeSheetName)}</x:Name>
+            <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+          </x:ExcelWorksheet>
+        </x:ExcelWorksheets>
+      </x:ExcelWorkbook>
+    </xml>
+    <![endif]-->
+  </head>
+  <body>
+    <table border="1">
+      <thead>${thead}</thead>
+      <tbody>${tbody}</tbody>
+    </table>
+  </body>
+</html>`;
+
+        return new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+    };
+
+    const createStudentReportExcel = (rows) => {
+        const normalizedRows = normalizeRows(rows);
+        if (normalizedRows.length === 0) {
+            enqueueSnackbar("No data available for the selected filters", { variant: "warning" });
+            return null;
+        }
+
+        const cols = [
+            { header: "Roll No", key: "registration_number" },
+            { header: "Student Name", key: "student_name" },
+            { header: "Father Name", key: "father_name" },
+            { header: "Mother Name", key: "mother_name" },
+            { header: "Contact", key: "contact_number" },
+            { header: "Gender", key: "gender" },
+            { header: "DOB", key: "date_of_birth" },
+            { header: "Blood Group", key: "blood_group" },
+            { header: "Board", key: "board_name" },
+            { header: "Hostel", key: "hostel_name" },
+            { header: "Deposit", key: "deposite_amount" },
+            { header: "Class", key: "class_info.class_name" },
+            { header: "Section", key: "class_info.section" },
+            { header: "Academic Year", key: "class_info.academic_year" },
+            { header: "Location", key: "location_id.locationName" },
+            { header: "Created At", key: "createdAt" },
+            { header: "Updated At", key: "updatedAt" },
+        ];
+
+        const headers = ["S.No", ...cols.map((c) => c.header)];
+        const body = normalizedRows.map((r, idx) => [
+            idx + 1,
+            ...cols.map((c) => {
+                const v = getByPath(r, c.key);
+                if (c.key === "createdAt" || c.key === "updatedAt") return formatDateTime(v);
+                return v ?? "";
+            }),
+        ]);
+
+        return createExcelBlobFromTable({
+            sheetName: "Student Report",
+            headers,
+            rows: body,
+        });
+    };
+
+    const createTransactionSummaryExcel = (rows) => {
+        const normalizedRows = normalizeRows(rows);
+        if (normalizedRows.length === 0) {
+            enqueueSnackbar("No data available for the selected filters", { variant: "warning" });
+            return null;
+        }
+
+        const cols = [
+            { header: "Roll No", accessor: (t) => t?.registration_number ?? t?.Roll_no ?? "" },
+            { header: "Board", accessor: (t) => t?.board_name ?? "" },
+            { header: "Transaction", accessor: (t) => t?.transaction ?? "" },
+            { header: "Source", accessor: (t) => t?.source ?? "" },
+            { header: "Type", accessor: (t) => t?.type ?? "" },
+            { header: "Amount", accessor: (t) => t?.amount ?? "" },
+            { header: "Created At", accessor: (t) => formatDateTime(t?.createdAt) },
+        ];
+
+        const headers = ["S.No", ...cols.map((c) => c.header)];
+        const body = normalizedRows.map((t, idx) => [
+            idx + 1,
+            ...cols.map((c) => c.accessor(t) ?? ""),
+        ]);
+
+        return createExcelBlobFromTable({
+            sheetName: "Transaction Summary",
+            headers,
+            rows: body,
+        });
+    };
+
+    const createCanteenSalesExcel = (rows) => {
+        const normalizedRows = normalizeRows(rows);
+        if (normalizedRows.length === 0) {
+            enqueueSnackbar("No data available for the selected filters", { variant: "warning" });
+            return null;
+        }
+
+        const cols = [
+            { header: "Roll No", accessor: (r) => r?.registration_number ?? r?.Roll_no ?? "" },
+            { header: "Board", accessor: (r) => r?.board_name ?? "" },
+            { header: "Product", accessor: (r) => r?.productName ?? "" },
+            { header: "Category", accessor: (r) => r?.category ?? "" },
+            { header: "Quantity", accessor: (r) => r?.quantity ?? "" },
+            { header: "Price", accessor: (r) => r?.price ?? "" },
+            { header: "Total Amount", accessor: (r) => r?.totalAmount ?? "" },
+            { header: "Created At", accessor: (r) => formatDateTime(r?.createdAt) },
+        ];
+
+        const headers = ["S.No", ...cols.map((c) => c.header)];
+        const body = normalizedRows.map((r, idx) => [
+            idx + 1,
+            ...cols.map((c) => c.accessor(r) ?? ""),
+        ]);
+
+        return createExcelBlobFromTable({
+            sheetName: "Canteen Sales",
+            headers,
+            rows: body,
+        });
+    };
+
+    const createInventoryExcel = (rows) => {
+        const normalizedRows = normalizeRows(rows);
+        if (normalizedRows.length === 0) {
+            enqueueSnackbar("No data available for the selected filters", { variant: "warning" });
+            return null;
+        }
+
+        const cols = [
+            { header: "Item No", accessor: (i) => i?.itemNo ?? "" },
+            { header: "Item Name", accessor: (i) => i?.itemName ?? "" },
+            { header: "Category", accessor: (i) => i?.category ?? "" },
+            { header: "Description", accessor: (i) => i?.description ?? "" },
+            { header: "Price", accessor: (i) => i?.price ?? "" },
+            { header: "Stock Qty", accessor: (i) => i?.stockQuantity ?? i?.totalQty ?? "" },
+            { header: "Status", accessor: (i) => i?.status ?? "" },
+            { header: "Created At", accessor: (i) => formatDateTime(i?.createdAt) },
+            { header: "Updated At", accessor: (i) => formatDateTime(i?.updatedAt) },
+        ];
+
+        const headers = ["S.No", ...cols.map((c) => c.header)];
+        const body = normalizedRows.map((i, idx) => [
+            idx + 1,
+            ...cols.map((c) => c.accessor(i) ?? ""),
+        ]);
+
+        return createExcelBlobFromTable({
+            sheetName: "Inventory",
+            headers,
+            rows: body,
+        });
+    };
+
+    const createPDF = ({ rows, title, fileName }) => {
+        const normalizedRows = normalizeRows(rows);
+        if (normalizedRows.length === 0) {
+            enqueueSnackbar("No data available for the selected filters", { variant: "warning" });
+            return false;
+        }
+
+        // Materialize rows into plain JSON so we don't lose values from objects
+        // that may have non-enumerable props/getters (can otherwise render as blank rows).
+        const materializedRows = normalizedRows.map((r) => {
+            if (!r || typeof r !== "object") return { value: r ?? "" };
+            try {
+                return JSON.parse(JSON.stringify(r));
+            } catch {
+                return r;
+            }
         });
 
-        doc.save(`${title}.pdf`);
+        const doc = new jsPDF("l", "pt", "a4");
+        doc.setFontSize(14);
+        doc.text(title, 40, 36);
+        doc.setFontSize(10);
+        doc.text(`Rows: ${normalizedRows.length}`, 40, 52);
+
+        const flat = materializedRows.map(flatten);
+        const colSet = new Set();
+        const cols = [];
+        for (const r of flat) {
+            for (const c of Object.keys(r)) {
+                if (shouldExcludeKey(c)) continue;
+                if (!colSet.has(c)) {
+                    colSet.add(c);
+                    cols.push(c);
+                }
+            }
+        }
+
+        const head = [["S.No", ...cols.map(formatHeader)]];
+        const body = flat.map((r, idx) => [
+            String(idx + 1),
+            ...cols.map((c) => String(r[c] ?? "")),
+        ]);
+
+        autoTable(doc, {
+            head,
+            body,
+            startY: 64,
+            theme: "grid",
+            styles: { fontSize: 7, cellPadding: 2, overflow: "linebreak", cellWidth: "wrap" },
+            headStyles: { fontStyle: "bold" },
+            horizontalPageBreak: true,
+            rowPageBreak: "auto",
+        });
+
+        doc.save(fileName);
+        return true;
+    };
+
+    const createStudentReportPDF = ({ rows, title, fileName }) => {
+        const normalizedRows = normalizeRows(rows);
+        if (normalizedRows.length === 0) {
+            enqueueSnackbar("No data available for the selected filters", { variant: "warning" });
+            return false;
+        }
+
+        const columns = [
+            { key: "registration_number", header: "Roll No" },
+            { key: "student_name", header: "Student Name" },
+            { key: "createdAt", header: "Created At" },
+            { key: "updatedAt", header: "Updated At" },
+            { key: "father_name", header: "Father Name" },
+            { key: "mother_name", header: "Mother Name" },
+            { key: "contact_number", header: "Contact" },
+            { key: "gender", header: "Gender" },
+            { key: "board_name", header: "Board" },
+            { key: "hostel_name", header: "Hostel" },
+            { key: "deposite_amount", header: "Deposit" },
+            { key: "class_info.class_name", header: "Class" },
+            { key: "class_info.section", header: "Section" },
+            { key: "class_info.academic_year", header: "Academic Year" },
+            { key: "location_id.locationName", header: "Location" },
+        ];
+
+        // Keep only columns that appear in at least one row (avoid too many empty columns).
+        const activeCols = columns.filter((c) =>
+            normalizedRows.some((r) => {
+                const v = getByPath(r, c.key);
+                return v !== undefined && v !== null && String(v) !== "";
+            })
+        );
+
+        const doc = new jsPDF("l", "pt", "a4");
+        doc.setFontSize(14);
+        doc.text(title, 40, 36);
+        doc.setFontSize(10);
+        doc.text(`Rows: ${normalizedRows.length}`, 40, 52);
+
+        const head = [["S.No", ...activeCols.map((c) => c.header)]];
+        const body = normalizedRows.map((r, idx) => [
+            String(idx + 1),
+            ...activeCols.map((c) => String(getByPath(r, c.key) ?? "")),
+        ]);
+
+        const createdAtColIndex = activeCols.findIndex((c) => c.key === "createdAt");
+        const updatedAtColIndex = activeCols.findIndex((c) => c.key === "updatedAt");
+        const columnStyles = {};
+        // +1 because S.No is the first column in the table
+        if (createdAtColIndex >= 0) columnStyles[createdAtColIndex + 1] = { cellWidth: 95 };
+        if (updatedAtColIndex >= 0) columnStyles[updatedAtColIndex + 1] = { cellWidth: 95 };
+
+        autoTable(doc, {
+            head,
+            body,
+            startY: 64,
+            theme: "grid",
+            styles: { fontSize: 7, cellPadding: 2, overflow: "linebreak", cellWidth: "wrap" },
+            headStyles: { fontStyle: "bold" },
+            columnStyles,
+            horizontalPageBreak: true,
+            rowPageBreak: "auto",
+        });
+
+        doc.save(fileName);
+        return true;
+    };
+
+    const createTransactionSummaryPDF = ({ rows, title, fileName }) => {
+        const normalizedRows = normalizeRows(rows);
+        if (normalizedRows.length === 0) {
+            enqueueSnackbar("No data available for the selected filters", { variant: "warning" });
+            return false;
+        }
+
+        const columns = [
+            {
+                header: "Roll No",
+                accessor: (t) => t?.registration_number ?? t?.Roll_no ?? "",
+            },
+            { header: "Board", accessor: (t) => t?.board_name ?? "" },
+            { header: "Transaction", accessor: (t) => t?.transaction ?? "" },
+            { header: "Source", accessor: (t) => t?.source ?? "" },
+            { header: "Type", accessor: (t) => t?.type ?? "" },
+            { header: "Amount", accessor: (t) => t?.amount ?? "" },
+            { header: "Created At", accessor: (t) => formatDateTime(t?.createdAt) },
+        ];
+
+        const doc = new jsPDF("l", "pt", "a4");
+        doc.setFontSize(14);
+        doc.text(title, 40, 36);
+        doc.setFontSize(10);
+        doc.text(`Rows: ${normalizedRows.length}`, 40, 52);
+
+        const head = [["S.No", ...columns.map((c) => c.header)]];
+        const body = normalizedRows.map((t, idx) => [
+            String(idx + 1),
+            ...columns.map((c) => String(c.accessor(t) ?? "")),
+        ]);
+
+        autoTable(doc, {
+            head,
+            body,
+            startY: 64,
+            theme: "grid",
+            styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak", cellWidth: "wrap" },
+            headStyles: { fontStyle: "bold" },
+            columnStyles: {
+                0: { cellWidth: 30 }, // S.No
+                1: { cellWidth: 70 }, // Roll No
+                2: { cellWidth: 55 }, // Board
+                6: { cellWidth: 60 }, // Amount
+                7: { cellWidth: 130 }, // Created At
+            },
+        });
+
+        doc.save(fileName);
+        return true;
+    };
+
+    const createTuckShopPDF = ({ rows, title, fileName }) => {
+        const normalizedRows = normalizeRows(rows);
+        if (normalizedRows.length === 0) {
+            enqueueSnackbar("No data available for the selected filters", { variant: "warning" });
+            return false;
+        }
+
+        const columns = [
+            { header: "Roll No", accessor: (r) => r?.registration_number ?? r?.Roll_no ?? "" },
+            { header: "Board", accessor: (r) => r?.board_name ?? "" },
+            { header: "Product", accessor: (r) => r?.productName ?? "" },
+            { header: "Category", accessor: (r) => r?.category ?? "" },
+            { header: "Qty", accessor: (r) => r?.quantity ?? "" },
+            { header: "Price", accessor: (r) => r?.price ?? "" },
+            { header: "Total", accessor: (r) => r?.totalAmount ?? "" },
+            { header: "Created At", accessor: (r) => formatDateTime(r?.createdAt) },
+        ];
+
+        const doc = new jsPDF("l", "pt", "a4");
+        doc.setFontSize(14);
+        doc.text(title, 40, 36);
+        doc.setFontSize(10);
+        doc.text(`Rows: ${normalizedRows.length}`, 40, 52);
+
+        const head = [["S.No", ...columns.map((c) => c.header)]];
+        const body = normalizedRows.map((r, idx) => [
+            String(idx + 1),
+            ...columns.map((c) => String(c.accessor(r) ?? "")),
+        ]);
+
+        autoTable(doc, {
+            head,
+            body,
+            startY: 64,
+            theme: "grid",
+            styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak", cellWidth: "wrap" },
+            headStyles: { fontStyle: "bold" },
+            columnStyles: {
+                0: { cellWidth: 30 }, // S.No
+                1: { cellWidth: 70 }, // Roll No
+                2: { cellWidth: 55 }, // Board
+                5: { cellWidth: 35 }, // Qty
+                6: { cellWidth: 45 }, // Price
+                7: { cellWidth: 55 }, // Total
+                8: { cellWidth: 130 }, // Created At
+            },
+        });
+
+        doc.save(fileName);
+        return true;
+    };
+
+    const createInventoryPDF = ({ rows, title, fileName }) => {
+        const normalizedRows = normalizeRows(rows);
+        if (normalizedRows.length === 0) {
+            enqueueSnackbar("No data available for the selected filters", { variant: "warning" });
+            return false;
+        }
+
+        const columns = [
+            { header: "Item No", accessor: (i) => i?.itemNo ?? "" },
+            { header: "Item Name", accessor: (i) => i?.itemName ?? "" },
+            { header: "Category", accessor: (i) => i?.category ?? "" },
+            { header: "Price", accessor: (i) => i?.price ?? "" },
+            { header: "Stock Qty", accessor: (i) => i?.stockQuantity ?? i?.totalQty ?? "" },
+            { header: "Status", accessor: (i) => i?.status ?? "" },
+            { header: "Created At", accessor: (i) => formatDateTime(i?.createdAt) },
+            { header: "Updated At", accessor: (i) => formatDateTime(i?.updatedAt) },
+        ];
+
+        const doc = new jsPDF("l", "pt", "a4");
+        doc.setFontSize(14);
+        doc.text(title, 40, 36);
+        doc.setFontSize(10);
+        doc.text(`Rows: ${normalizedRows.length}`, 40, 52);
+
+        const head = [["S.No", ...columns.map((c) => c.header)]];
+        const body = normalizedRows.map((i, idx) => [
+            String(idx + 1),
+            ...columns.map((c) => String(c.accessor(i) ?? "")),
+        ]);
+
+        autoTable(doc, {
+            head,
+            body,
+            startY: 64,
+            theme: "grid",
+            styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak", cellWidth: "wrap" },
+            headStyles: { fontStyle: "bold" },
+            columnStyles: {
+                0: { cellWidth: 30 }, // S.No
+                1: { cellWidth: 70 }, // Item No
+                4: { cellWidth: 55 }, // Price
+                5: { cellWidth: 60 }, // Stock Qty
+                7: { cellWidth: 130 }, // Created At
+                8: { cellWidth: 130 }, // Updated At
+            },
+        });
+
+        doc.save(fileName);
+        return true;
     };
 
     /* =======================
@@ -135,8 +685,10 @@ export default function Reports() {
                     url: apiUrl.apiUrl,
                     payload: {
                         ...payload,
-                        ...(apiUrl.id === 1
-                            ? { registration_number: student?.registration_number }
+                        ...(apiUrl.id === 1 &&
+                        filterByStudent &&
+                        student?.registration_number
+                            ? { registration_number: student.registration_number }
                             : {}),
                         ...([1, 2, 3, 5].includes(apiUrl.id) && boardName
                             ? { board_name: boardName }
@@ -151,12 +703,128 @@ export default function Reports() {
             }
 
             if (format === "excel") {
-                download(res, "report.xlsx");
+                const safeTitle = sanitizeFileName(apiUrl.title);
+                const excelName = `${safeTitle}.xlsx`;
+
+                // If API returns a real Excel file
+                if (typeof Blob !== "undefined" && res instanceof Blob) {
+                    const type = String(res.type ?? "").toLowerCase();
+
+                    // Try to detect JSON wrapped in a Blob (common when responseType is blob but API returns JSON)
+                    const looksLikeJson =
+                        type.includes("application/json") ||
+                        type.includes("text/plain") ||
+                        type.includes("application/octet-stream") ||
+                        type === "";
+
+                    if (looksLikeJson && (type.includes("json") || res.size < 2_000_000)) {
+                        try {
+                            const text = await res.text();
+                            const parsed = JSON.parse(text);
+                            if (apiUrl.id === 1) {
+                                const excelBlob = createStudentReportExcel(parsed);
+                                if (excelBlob) {
+                                    download(excelBlob, `${safeTitle}.xls`);
+                                    enqueueSnackbar("Report generated successfully", { variant: "success" });
+                                    return;
+                                }
+                            }
+                            if (apiUrl.id === 2) {
+                                const excelBlob = createTransactionSummaryExcel(parsed);
+                                if (excelBlob) {
+                                    download(excelBlob, `${safeTitle}.xls`);
+                                    enqueueSnackbar("Report generated successfully", { variant: "success" });
+                                    return;
+                                }
+                            }
+                            if (apiUrl.id === 3) {
+                                const excelBlob = createCanteenSalesExcel(parsed);
+                                if (excelBlob) {
+                                    download(excelBlob, `${safeTitle}.xls`);
+                                    enqueueSnackbar("Report generated successfully", { variant: "success" });
+                                    return;
+                                }
+                            }
+                            if (apiUrl.id === 5) {
+                                const excelBlob = createInventoryExcel(parsed);
+                                if (excelBlob) {
+                                    download(excelBlob, `${safeTitle}.xls`);
+                                    enqueueSnackbar("Report generated successfully", { variant: "success" });
+                                    return;
+                                }
+                            }
+                        } catch {
+                            // not JSON, continue to download as file
+                        }
+                    }
+
+                    download(res, excelName);
+                    enqueueSnackbar("Report generated successfully", { variant: "success" });
+                    return;
+                }
+
+                // JSON response -> build Excel on client (Student Report first)
+                if (apiUrl.id === 1) {
+                    const excelBlob = createStudentReportExcel(res);
+                    if (!excelBlob) return;
+                    download(excelBlob, `${safeTitle}.xls`);
+                    enqueueSnackbar("Report generated successfully", { variant: "success" });
+                    return;
+                }
+
+                if (apiUrl.id === 2) {
+                    const excelBlob = createTransactionSummaryExcel(res);
+                    if (!excelBlob) return;
+                    download(excelBlob, `${safeTitle}.xls`);
+                    enqueueSnackbar("Report generated successfully", { variant: "success" });
+                    return;
+                }
+
+                if (apiUrl.id === 3) {
+                    const excelBlob = createCanteenSalesExcel(res);
+                    if (!excelBlob) return;
+                    download(excelBlob, `${safeTitle}.xls`);
+                    enqueueSnackbar("Report generated successfully", { variant: "success" });
+                    return;
+                }
+
+                if (apiUrl.id === 5) {
+                    const excelBlob = createInventoryExcel(res);
+                    if (!excelBlob) return;
+                    download(excelBlob, `${safeTitle}.xls`);
+                    enqueueSnackbar("Report generated successfully", { variant: "success" });
+                    return;
+                }
+
+                // fallback for other reports
+                enqueueSnackbar("Excel export not configured for this report yet", { variant: "warning" });
+                return;
             }
 
             if (format === "pdf") {
-                const rows = apiUrl.id === 2 ? res.transactions : res.data;
-                createPDF(rows, apiUrl.title.replace(" ", "_"));
+                const safeTitle = sanitizeFileName(apiUrl.title);
+                const fileName = `${safeTitle}.pdf`;
+
+                if (typeof Blob !== "undefined" && res instanceof Blob) {
+                    download(res, fileName);
+                    enqueueSnackbar("Report generated successfully", { variant: "success" });
+                    return;
+                }
+
+                const rows = apiUrl.id === 2 ? res?.transactions ?? res : res;
+
+                const ok =
+                    apiUrl.id === 1
+                        ? createStudentReportPDF({ rows, title: apiUrl.title, fileName })
+                        : apiUrl.id === 2
+                            ? createTransactionSummaryPDF({ rows, title: apiUrl.title, fileName })
+                            : apiUrl.id === 3
+                                ? createTuckShopPDF({ rows, title: apiUrl.title, fileName })
+                                : apiUrl.id === 5
+                                    ? createInventoryPDF({ rows, title: apiUrl.title, fileName })
+                            : createPDF({ rows, title: apiUrl.title, fileName });
+
+                if (!ok) return;
             }
 
             enqueueSnackbar("Report generated successfully", { variant: "success" });
@@ -280,7 +948,7 @@ export default function Reports() {
                                     <MenuItem value="IB">IB</MenuItem>
                                 </TextField>
 
-                                <Autocomplete
+                                {apiUrl.id === 1 && <Autocomplete
                                     options={students}
                                     value={student}
                                     loading={isFetching}
@@ -314,7 +982,19 @@ export default function Reports() {
                                             }}
                                         />
                                     )}
-                                />
+                                />}
+
+                                {/* {apiUrl.id === 1 && (
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={filterByStudent}
+                                                onChange={(e) => setFilterByStudent(e.target.checked)}
+                                            />
+                                        }
+                                        label="Generate for selected student only"
+                                    />
+                                )} */}
                             </>
                         )}
 
