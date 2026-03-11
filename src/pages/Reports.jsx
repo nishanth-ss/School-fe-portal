@@ -164,10 +164,10 @@ export default function Reports() {
             } else {
                 out[key] = Array.isArray(val)
                     ? val
-                          .map((v) =>
-                              v && typeof v === "object" ? JSON.stringify(v) : String(v ?? "")
-                          )
-                          .join(", ")
+                        .map((v) =>
+                            v && typeof v === "object" ? JSON.stringify(v) : String(v ?? "")
+                        )
+                        .join(", ")
                     : val ?? "";
             }
         }
@@ -679,23 +679,51 @@ export default function Reports() {
        SUBMIT
     ======================= */
 
+    const getBackendErrorMessage = (err) => {
+        if (!err) return "Report generation failed";
+        if (typeof err === "string") return err;
+
+        const data = err?.response?.data;
+        if (typeof data === "string" && data.trim()) return data;
+        if (data?.message) return String(data.message);
+        if (data?.error) return String(data.error);
+
+        const errors = data?.errors;
+        if (Array.isArray(errors) && errors.length) {
+            return errors
+                .map((e) => (typeof e === "string" ? e : e?.message))
+                .filter(Boolean)
+                .join(", ");
+        }
+        if (errors && typeof errors === "object") {
+            const msgs = Object.values(errors)
+                .flat()
+                .map((e) => (typeof e === "string" ? e : e?.message ?? e))
+                .filter(Boolean);
+            if (msgs.length) return msgs.join(", ");
+        }
+
+        if (err?.message) return String(err.message);
+        return "Report generation failed";
+    };
+
     const generate = async () => {
         try {
                 const res = await reportMutation.mutateAsync({
                     url: apiUrl.apiUrl,
                     payload: {
-                        ...payload,
-                        ...(apiUrl.id === 1 &&
+                    ...payload,
+                    ...(apiUrl.id === 1 &&
                         filterByStudent &&
                         student?.registration_number
-                            ? { registration_number: student.registration_number }
-                            : {}),
-                        ...([1, 2, 3, 5].includes(apiUrl.id) && boardName
-                            ? { board_name: boardName }
-                            : {}),
-                    },
-                    format,
-                });
+                        ? { registration_number: student.registration_number }
+                        : {}),
+                    ...([1, 2, 3, 5].includes(apiUrl.id) && boardName
+                        ? { board_name: boardName }
+                        : {}),
+                },
+                format,
+            });
 
             if (format === "csv") {
                 const blob = new Blob([res], { type: "text/csv" });
@@ -822,14 +850,14 @@ export default function Reports() {
                                 ? createTuckShopPDF({ rows, title: apiUrl.title, fileName })
                                 : apiUrl.id === 5
                                     ? createInventoryPDF({ rows, title: apiUrl.title, fileName })
-                            : createPDF({ rows, title: apiUrl.title, fileName });
+                                    : createPDF({ rows, title: apiUrl.title, fileName });
 
                 if (!ok) return;
             }
 
             enqueueSnackbar("Report generated successfully", { variant: "success" });
         } catch (e) {
-            enqueueSnackbar("Report generation failed", { variant: "error" });
+            enqueueSnackbar(getBackendErrorMessage(e), { variant: "error" });
         }
     };
 
@@ -882,7 +910,12 @@ export default function Reports() {
                                 select
                                 fullWidth
                                 size="large"
-                                label="Frequency"
+                                label={
+                                    <>
+                                        Frequency
+                                        <span className="text-red-600 "> *</span>
+                                    </>
+                                }
                                 value={frequency}
                                 onChange={(e) => setFrequency(e.target.value)}
                                 sx={{ marginBottom: "1rem" }}
@@ -905,7 +938,12 @@ export default function Reports() {
                                     select
                                     fullWidth
                                     size="large"
-                                    label="Date Range"
+                                    label={
+                                        <>
+                                            Date Range
+                                            {/* <span className="text-red-600 "> *</span> */}
+                                        </>
+                                    }
                                     value={dateRange}
                                     onChange={(e) => setDateRange(e.target.value)}
                                     sx={{ marginBottom: "1rem" }}
