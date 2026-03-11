@@ -46,7 +46,10 @@ export default function TransactionHistory() {
                 amount,
                 createdAt: t.createdAt,
                 source: t.source || "-",
-                status: t.isReversed || t.status === "reversed" ? "reversed" : t.status || "Completed",
+                status:
+                    t.is_reversed || t.isReversed || t.status === "reversed"
+                        ? "reversed"
+                        : t.status || "Completed",
                 raw: t,
             };
         });
@@ -314,13 +317,13 @@ export default function TransactionHistory() {
                 minWidth: 180,
                 sortable: false,
                 renderCell: (params) => {
-                    const status = params.value;
-                    const isReversed = status === "reversed";
+                    const status = String(params.value || "");
+                    const isReversed = status.toLowerCase() === "reversed";
 
                     return (
                         <Chip
                             size="small"
-                            label={isReversed ? "Transaction reversed" : status}
+                            label={isReversed ? "Reversed" : status}
                             color={isReversed ? "error" : "default"}
                             variant={isReversed ? "filled" : "outlined"}
                         />
